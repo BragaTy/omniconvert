@@ -1,6 +1,12 @@
 # 🚀 OmniConvert Studio
 
 <p align="center">
+  <a href="https://bragaty.github.io/omniconvert/" target="_blank">
+    <img src="https://img.shields.io/badge/Acessar%20Online-https%3A%2F%2Fbragaty.github.io%2Fomniconvert%2F-success?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Acessar Online" />
+  </a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Status-100%25%20Funcional-emerald?style=for-the-badge" alt="Status" />
   <img src="https://img.shields.io/badge/Licen%C3%A7a-MIT-blue?style=for-the-badge" alt="License" />
   <img src="https://img.shields.io/badge/Deploy-GitHub%20Pages-purple?style=for-the-badge" alt="GitHub Pages" />
@@ -8,6 +14,8 @@
 </p>
 
 > **A alternativa definitiva, gratuita e de código aberto ao Convertio e iLovePDF — processamento 100% no seu navegador!**
+> 
+> 🌐 **Experimente agora mesmo sem instalar nada**: [https://bragaty.github.io/omniconvert/](https://bragaty.github.io/omniconvert/)
 
 ---
 
