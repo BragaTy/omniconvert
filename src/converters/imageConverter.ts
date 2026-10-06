@@ -49,8 +49,12 @@ export async function convertImage(
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = options.backgroundColor || '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, width, height);
-    const imgData = canvas.toDataURL('image/jpeg', options.imageQuality || 0.92);
+    const imgData = canvas.toDataURL('image/jpeg', options.imageQuality || 0.95);
 
     doc.addImage(imgData, 'JPEG', x, y, renderWidth, renderHeight);
     const pdfBlob = doc.output('blob');
@@ -63,6 +67,8 @@ export async function convertImage(
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, width, height);
     const dataUrl = canvas.toDataURL('image/png');
     const blob = new Blob([dataUrl], { type: 'text/plain;charset=utf-8' });
@@ -75,6 +81,8 @@ export async function convertImage(
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, width, height);
     const dataUrl = canvas.toDataURL('image/png');
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -96,6 +104,8 @@ export async function convertImage(
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d', { alpha: target !== 'jpg' && target !== 'jpeg' })!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   // Fill background if jpg or requested
   if (target === 'jpg' || target === 'jpeg') {

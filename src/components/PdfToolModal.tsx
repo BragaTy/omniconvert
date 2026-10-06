@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, UploadCloud, Download, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { PdfToolItem } from './PdfToolsGrid';
 import { downloadBlob, formatBytes } from '../utils/fileHelpers';
+import JSZip from 'jszip';
 import * as pdfEngine from '../pdf/pdfEngine';
 
 interface PdfToolModalProps {
@@ -102,8 +103,17 @@ export const PdfToolModal: React.FC<PdfToolModalProps> = ({ tool, onClose }) => 
         }
         case 'pdf_to_jpg': {
           const imgs = await pdfEngine.pdfToJpg(files[0]);
-          outputBlob = imgs[0].blob;
-          filename = imgs[0].name;
+          if (imgs.length > 1) {
+            const zip = new JSZip();
+            imgs.forEach(img => zip.file(img.name, img.blob));
+            outputBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+            filename = `${files[0].name.replace(/\.pdf$/i, '')}_paginas_jpg.zip`;
+          } else if (imgs.length === 1) {
+            outputBlob = imgs[0].blob;
+            filename = imgs[0].name;
+          } else {
+            throw new Error('Nenhuma página encontrada no PDF.');
+          }
           break;
         }
         case 'jpg_to_pdf': {

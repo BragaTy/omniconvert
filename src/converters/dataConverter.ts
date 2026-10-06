@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import * as yaml from 'js-yaml';
+import { jsPDF } from 'jspdf';
 import { ConversionOptions } from '../types';
 
 export async function convertData(
@@ -11,19 +12,20 @@ export async function convertData(
   const inputExt = (file.name.split('.').pop() || '').toLowerCase();
   const target = targetFormat.toLowerCase();
 
-  // First, parse input file into a normalized JavaScript data structure
+  // 1. Parse input file into a normalized JavaScript data structure
   let normalizedData: any = null;
 
   if (inputExt === 'xlsx' || inputExt === 'xls') {
     const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
     const firstSheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[firstSheetName];
     normalizedData = XLSX.utils.sheet_to_json(sheet);
   } else if (inputExt === 'csv' || inputExt === 'tsv') {
-    const text = await file.text();
-    const delimiter = inputExt === 'tsv' ? '\t' : (options.csvDelimiter || ',');
-    normalizedData = parseCsvToObjects(text, delimiter);
+    const rawText = await file.text();
+    const cleanText = rawText.replace(/^\uFEFF/, ''); // Strip BOM
+    const delimiter = inputExt === 'tsv' ? '\t' : (options.csvDelimiter || detectCsvDelimiter(cleanText));
+    normalizedData = parseCsvToObjects(cleanText, delimiter);
   } else if (inputExt === 'json') {
     const text = await file.text();
     try {
@@ -42,16 +44,17 @@ export async function convertData(
     const text = await file.text();
     normalizedData = parseXmlToJson(text);
   } else {
-    // Fallback: try reading as plain text or JSON
+    // Fallback: try reading as JSON, then plain text lines
     const text = await file.text();
     try {
       normalizedData = JSON.parse(text);
     } catch {
-      normalizedData = [{ content: text }];
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      normalizedData = lines.map((l, i) => ({ linha: i + 1, conteudo: l }));
     }
   }
 
-  // Now, serialize normalizedData into the requested targetFormat
+  // 2. Serialize normalizedData into the requested targetFormat
   switch (target) {
     case 'json': {
       const indent = options.jsonIndent ?? 2;
@@ -102,6 +105,11 @@ export async function convertData(
       return { blob, filename: `${baseName}.html` };
     }
 
+    case 'pdf': {
+      const pdfBlob = generateTablePdf(normalizedData, baseName, options);
+      return { blob: pdfBlob, filename: `${baseName}.pdf` };
+    }
+
     case 'txt': {
       let txtContent = '';
       if (typeof normalizedData === 'string') {
@@ -118,7 +126,115 @@ export async function convertData(
   }
 }
 
-// Helper: Parse CSV text to list of objects
+// Auto-detect CSV delimiter by inspecting frequency in first 5 lines
+function detectCsvDelimiter(text: string): string {
+  const firstLines = text.split(/\r?\n/).slice(0, 5).join('\n');
+  const countComma = (firstLines.match(/,/g) || []).length;
+  const countSemicolon = (firstLines.match(/;/g) || []).length;
+  const countTab = (firstLines.match(/\t/g) || []).length;
+  const countPipe = (firstLines.match(/\|/g) || []).length;
+
+  if (countSemicolon > countComma && countSemicolon > countTab) return ';';
+  if (countTab > countComma && countTab > countSemicolon) return '\t';
+  if (countPipe > countComma && countPipe > countSemicolon) return '|';
+  return ',';
+}
+
+// Generate formatted PDF table with auto orientation, zebra striping, and pagination
+function generateTablePdf(data: any, title: string, options: ConversionOptions): Blob {
+  const rows = Array.isArray(data) ? data : [data];
+  if (rows.length === 0) {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    doc.text('Nenhum dado tabular para exibir.', 40, 50);
+    return doc.output('blob');
+  }
+
+  const headers = Object.keys(rows[0] || {});
+  const isLandscape = options.pdfOrientation ? options.pdfOrientation === 'landscape' : headers.length > 4;
+  const doc = new jsPDF({
+    orientation: isLandscape ? 'landscape' : 'portrait',
+    unit: 'pt',
+    format: options.pdfPageSize || 'a4'
+  });
+
+  const margin = options.pdfMargin ?? 30;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const availableWidth = pageWidth - margin * 2;
+
+  const colWidth = Math.max(availableWidth / Math.max(headers.length, 1), 40);
+
+  let y = margin + 25;
+  let pageNum = 1;
+
+  const drawFooter = (p: number) => {
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Página ${p}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
+  };
+
+  const drawHeader = () => {
+    doc.setFillColor(30, 41, 59); // slate-800
+    doc.rect(margin, y, availableWidth, 20, 'F');
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+
+    headers.forEach((h, idx) => {
+      const x = margin + idx * colWidth + 4;
+      const text = String(h);
+      doc.text(text.substring(0, Math.floor(colWidth / 5.5)), x, y + 13);
+    });
+    y += 20;
+  };
+
+  // Title
+  doc.setFont('Helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(15, 23, 42);
+  doc.text(title, margin, y);
+  y += 18;
+
+  drawHeader();
+
+  for (let r = 0; r < rows.length; r++) {
+    if (y > pageHeight - margin - 30) {
+      drawFooter(pageNum);
+      doc.addPage();
+      pageNum++;
+      y = margin + 20;
+      drawHeader();
+    }
+
+    const row = rows[r];
+    const isEven = r % 2 === 0;
+    doc.setFillColor(isEven ? 248 : 255, isEven ? 250 : 255, isEven ? 252 : 255);
+    doc.rect(margin, y, availableWidth, 16, 'F');
+
+    // Bottom row line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y + 16, margin + availableWidth, y + 16);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(51, 65, 85);
+
+    headers.forEach((h, idx) => {
+      const x = margin + idx * colWidth + 4;
+      const val = row[h] !== null && row[h] !== undefined ? String(row[h]) : '';
+      doc.text(val.substring(0, Math.floor(colWidth / 5)), x, y + 11);
+    });
+
+    y += 16;
+  }
+
+  drawFooter(pageNum);
+  return doc.output('blob');
+}
+
+// Parse CSV text to array of objects
 function parseCsvToObjects(csvText: string, delimiter: string = ','): any[] {
   const lines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
   if (lines.length === 0) return [];
@@ -156,7 +272,7 @@ function splitCsvLine(line: string, delimiter: string): string[] {
   return result;
 }
 
-// Helper: Convert array of objects or object to CSV
+// Convert objects to CSV string
 function objectsToCsv(data: any, delimiter: string = ','): string {
   const rows = Array.isArray(data) ? data : [data];
   if (rows.length === 0) return '';
@@ -179,7 +295,7 @@ function objectsToCsv(data: any, delimiter: string = ','): string {
   return csvRows.join('\r\n');
 }
 
-// Helper: Convert XML string to JSON
+// Convert XML string to JSON
 function parseXmlToJson(xmlText: string): any {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -210,7 +326,7 @@ function parseXmlToJson(xmlText: string): any {
   return parseNode(xmlDoc.documentElement);
 }
 
-// Helper: Convert JSON object to XML string
+// Convert JSON object to XML string
 function jsonToXml(obj: any, rootName: string = 'root'): string {
   const buildXml = (data: any, name: string): string => {
     if (data === null || data === undefined) return `<${name}/>`;
@@ -235,7 +351,7 @@ function jsonToXml(obj: any, rootName: string = 'root'): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n${buildXml(obj, rootName)}`;
 }
 
-// Helper: Convert objects to styled HTML Table
+// Convert objects to styled HTML Table
 function objectsToHtmlTable(data: any, title: string): string {
   const rows = Array.isArray(data) ? data : [data];
   if (rows.length === 0) return `<!DOCTYPE html><html><body><p>Nenhum dado encontrado.</p></body></html>`;

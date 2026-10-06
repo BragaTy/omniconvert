@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Image as ImageIcon, FileSpreadsheet, FileText, Music, Archive, ArrowRight } from 'lucide-react';
-import { ALL_FORMATS, getCompatibleTargets } from '../constants/formats';
+import { getCompatibleTargets } from '../constants/formats';
 import { FileCategory } from '../types';
 
 export const CompatibilityMatrix: React.FC = () => {
@@ -24,6 +24,8 @@ export const CompatibilityMatrix: React.FC = () => {
     { ext: 'csv', cat: 'data' as FileCategory, name: 'CSV Planilha' },
     { ext: 'xlsx', cat: 'data' as FileCategory, name: 'Excel XLSX' },
     { id: 'json', ext: 'json', cat: 'data' as FileCategory, name: 'JSON Dados' },
+    { ext: 'pdf', cat: 'document' as FileCategory, name: 'Documento PDF' },
+    { ext: 'docx', cat: 'document' as FileCategory, name: 'Word (DOCX)' },
     { ext: 'md', cat: 'document' as FileCategory, name: 'Markdown (MD)' },
     { ext: 'html', cat: 'document' as FileCategory, name: 'HTML Web' },
     { ext: 'txt', cat: 'document' as FileCategory, name: 'Texto Puro (TXT)' },

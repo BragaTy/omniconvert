@@ -14,6 +14,7 @@ export const ALL_FORMATS: Record<string, FormatOption> = {
 
   // Documents
   pdf: { extension: 'pdf', label: 'PDF', mimeType: 'application/pdf', category: 'document', description: 'Documento portátil legível em qualquer dispositivo' },
+  docx: { extension: 'docx', label: 'Word (DOCX)', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', category: 'document', description: 'Documento editável do Microsoft Word' },
   txt: { extension: 'txt', label: 'TXT', mimeType: 'text/plain', category: 'document', description: 'Arquivo de texto puro simples' },
   md: { extension: 'md', label: 'Markdown (MD)', mimeType: 'text/markdown', category: 'document', description: 'Texto com marcação simplificada' },
   html: { extension: 'html', label: 'HTML', mimeType: 'text/html', category: 'document', description: 'Página web formatada' },
@@ -82,15 +83,15 @@ export function getCompatibleTargets(ext: string, category: FileCategory): Forma
     case 'data': {
       let candidates: string[] = [];
       if (['csv', 'tsv'].includes(cleanExt)) {
-        candidates = ['json', 'xlsx', 'xml', 'yaml', 'html', 'txt'];
+        candidates = ['xlsx', 'pdf', 'json', 'yaml', 'xml', 'html', 'txt'];
       } else if (cleanExt === 'json') {
-        candidates = ['csv', 'xlsx', 'yaml', 'xml', 'txt'];
+        candidates = ['csv', 'xlsx', 'pdf', 'yaml', 'xml', 'txt'];
       } else if (['xlsx', 'xls'].includes(cleanExt)) {
-        candidates = ['csv', 'json', 'html', 'txt', 'xml'];
+        candidates = ['pdf', 'csv', 'json', 'html', 'txt', 'xml', 'yaml'];
       } else if (['yaml', 'yml'].includes(cleanExt)) {
-        candidates = ['json', 'csv', 'xml', 'txt'];
+        candidates = ['json', 'csv', 'xlsx', 'xml', 'txt'];
       } else if (cleanExt === 'xml') {
-        candidates = ['json', 'csv', 'yaml', 'txt'];
+        candidates = ['json', 'csv', 'xlsx', 'yaml', 'txt'];
       } else {
         candidates = ['json', 'csv', 'xlsx', 'yaml', 'txt'];
       }
@@ -107,16 +108,18 @@ export function getCompatibleTargets(ext: string, category: FileCategory): Forma
 
     case 'document': {
       let candidates: string[] = [];
-      if (cleanExt === 'md' || cleanExt === 'markdown') {
-        candidates = ['html', 'pdf', 'txt'];
+      if (cleanExt === 'pdf') {
+        candidates = ['docx', 'txt', 'md', 'html', 'png', 'jpg', 'xlsx'];
+      } else if (['docx', 'doc', 'rtf', 'odt'].includes(cleanExt)) {
+        candidates = ['pdf', 'txt', 'md', 'html'];
+      } else if (cleanExt === 'md' || cleanExt === 'markdown') {
+        candidates = ['pdf', 'docx', 'html', 'txt'];
       } else if (cleanExt === 'html' || cleanExt === 'htm') {
-        candidates = ['md', 'txt', 'pdf'];
+        candidates = ['pdf', 'docx', 'md', 'txt'];
       } else if (cleanExt === 'txt') {
-        candidates = ['pdf', 'html', 'md', 'base64'];
-      } else if (cleanExt === 'pdf') {
-        candidates = ['txt', 'base64'];
+        candidates = ['pdf', 'docx', 'md', 'html', 'base64'];
       } else {
-        candidates = ['pdf', 'txt', 'html'];
+        candidates = ['pdf', 'docx', 'txt', 'html'];
       }
 
       candidates.forEach(c => {

@@ -4,6 +4,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
+import { extractDocumentTextAndStructure, buildPdfFromStructure } from '../converters/documentConverter';
 
 // Configure pdf.js worker for browser/GitHub Pages compatibility
 if (typeof window !== 'undefined') {
@@ -164,7 +165,6 @@ export async function pdfToPowerPoint(file: File): Promise<Blob> {
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
   const pdfDoc = await loadingTask.promise;
-  const zip = new JSZip();
 
   // Create presentation HTML/SVG slides package readable as presentation
   const slidesHtml: string[] = [];
@@ -223,53 +223,177 @@ export async function pdfToExcel(file: File): Promise<Blob> {
 
 // 7. Word para PDF
 export async function wordToPdf(file: File): Promise<Blob> {
-  const text = await file.text();
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const lines = doc.splitTextToSize(text, 500);
-  let y = 50;
-  for (const line of lines) {
-    if (y > 780) {
-      doc.addPage();
-      y = 50;
-    }
-    doc.text(line, 40, y);
-    y += 16;
-  }
-  return doc.output('blob');
+  const baseName = file.name.replace(/\.[^/.]+$/, '');
+  const inputExt = (file.name.split('.').pop() || '').toLowerCase();
+  const extracted = await extractDocumentTextAndStructure(file, inputExt);
+  return buildPdfFromStructure(baseName, extracted.paragraphs, {
+    pdfOrientation: 'portrait',
+    pdfPageSize: 'a4',
+    pdfMargin: 40
+  });
 }
 
 // 8. Excel para PDF
 export async function excelToPdf(file: File, orientation: 'portrait' | 'landscape' = 'landscape'): Promise<Blob> {
   const buffer = await file.arrayBuffer();
-  const wb = XLSX.read(buffer, { type: 'array' });
+  const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  const baseName = file.name.replace(/\.[^/.]+$/, '');
 
-  const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' });
-  doc.setFontSize(10);
-
-  const startY = 40;
-  let y = startY;
-  const colWidth = orientation === 'landscape' ? 80 : 60;
-
-  for (let r = 0; r < rows.length; r++) {
-    if (y > (orientation === 'landscape' ? 520 : 750)) {
-      doc.addPage();
-      y = startY;
-    }
-    const row = rows[r];
-    for (let c = 0; c < row.length; c++) {
-      const val = String(row[c] ?? '');
-      doc.text(val.substring(0, 15), 40 + c * colWidth, y);
-    }
-    y += 18;
+  if (rows.length === 0) {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    doc.text('Planilha vazia.', 40, 50);
+    return doc.output('blob');
   }
 
+  const numCols = Math.max(...rows.map(r => (Array.isArray(r) ? r.length : 0)));
+  const useLandscape = orientation === 'landscape' || numCols > 4;
+
+  const doc = new jsPDF({ orientation: useLandscape ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' });
+  const margin = 30;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const availableWidth = pageWidth - margin * 2;
+  const colWidth = Math.max(availableWidth / Math.max(numCols, 1), 40);
+
+  let y = margin + 25;
+  let pageNum = 1;
+
+  const drawFooter = (p: number) => {
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Página ${p}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
+  };
+
+  // Title
+  doc.setFont('Helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(15, 23, 42);
+  doc.text(baseName, margin, y);
+  y += 20;
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const isHeader = r === 0;
+
+    if (y > pageHeight - margin - 25) {
+      drawFooter(pageNum);
+      doc.addPage();
+      pageNum++;
+      y = margin + 25;
+    }
+
+    if (isHeader) {
+      doc.setFillColor(30, 41, 59);
+      doc.rect(margin, y, availableWidth, 20, 'F');
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      for (let c = 0; c < numCols; c++) {
+        const val = String(row[c] ?? `Col ${c + 1}`);
+        doc.text(val.substring(0, Math.floor(colWidth / 5.5)), margin + c * colWidth + 4, y + 13);
+      }
+      y += 20;
+    } else {
+      const isEven = r % 2 === 0;
+      doc.setFillColor(isEven ? 248 : 255, isEven ? 250 : 255, isEven ? 252 : 255);
+      doc.rect(margin, y, availableWidth, 16, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y + 16, margin + availableWidth, y + 16);
+
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      for (let c = 0; c < numCols; c++) {
+        const val = String(row[c] ?? '');
+        doc.text(val.substring(0, Math.floor(colWidth / 5)), margin + c * colWidth + 4, y + 11);
+      }
+      y += 16;
+    }
+  }
+
+  drawFooter(pageNum);
   return doc.output('blob');
 }
 
 // 9. PowerPoint para PDF
 export async function powerpointToPdf(file: File): Promise<Blob> {
+  const inputExt = (file.name.split('.').pop() || '').toLowerCase();
+  const baseName = file.name.replace(/\.[^/.]+$/, '');
+
+  if (inputExt === 'pptx') {
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const slideKeys = Object.keys(zip.files)
+      .filter(k => /ppt\/slides\/slide\d+\.xml/i.test(k))
+      .sort((a, b) => {
+        const numA = parseInt((a.match(/\d+/) || ['0'])[0], 10);
+        const numB = parseInt((b.match(/\d+/) || ['0'])[0], 10);
+        return numA - numB;
+      });
+
+    if (slideKeys.length > 0) {
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const parser = new DOMParser();
+
+      for (let sIdx = 0; sIdx < slideKeys.length; sIdx++) {
+        if (sIdx > 0) doc.addPage();
+        const xmlText = await zip.files[slideKeys[sIdx]].async('text');
+        const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+
+        // Draw slide background & frame
+        doc.setFillColor(248, 250, 252);
+        doc.rect(20, 20, pageWidth - 40, pageHeight - 40, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(1);
+        doc.rect(20, 20, pageWidth - 40, pageHeight - 40, 'S');
+
+        // Slide header
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Slide ${sIdx + 1}`, 40, 50);
+
+        // Slide footer
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`${baseName} • Slide ${sIdx + 1} de ${slideKeys.length}`, pageWidth / 2, pageHeight - 30, { align: 'center' });
+
+        // Extract paragraphs from slide
+        const pNodes = xmlDoc.getElementsByTagName('a:p');
+        let y = 80;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(11);
+        doc.setTextColor(51, 65, 85);
+
+        for (let p = 0; p < pNodes.length; p++) {
+          const tNodes = pNodes[p].getElementsByTagName('a:t');
+          let text = '';
+          for (let t = 0; t < tNodes.length; t++) {
+            text += tNodes[t].textContent || '';
+          }
+          const trimmed = text.trim();
+          if (trimmed.length > 0) {
+            const lines = doc.splitTextToSize(trimmed, pageWidth - 100);
+            for (const line of lines) {
+              if (y < pageHeight - 50) {
+                doc.text(line, 50, y);
+                y += 18;
+              }
+            }
+            y += 6;
+          }
+        }
+      }
+      return doc.output('blob');
+    }
+  }
+
   return wordToPdf(file);
 }
 
