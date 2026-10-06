@@ -4,13 +4,11 @@ import { FileItem } from '../types';
 import { formatBytes, downloadBlob } from '../utils/fileHelpers';
 
 interface PreviewModalProps {
-  item: FileItem | null;
+  item: FileItem;
   onClose: () => void;
 }
 
 export const PreviewModal: React.FC<PreviewModalProps> = ({ item, onClose }) => {
-  if (!item) return null;
-
   const [activeTab, setActiveTab] = useState<'original' | 'converted'>('original');
   const [textContent, setTextContent] = useState<string>('');
   const [copied, setCopied] = useState(false);

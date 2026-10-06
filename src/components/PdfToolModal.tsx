@@ -5,13 +5,11 @@ import { downloadBlob, formatBytes } from '../utils/fileHelpers';
 import * as pdfEngine from '../pdf/pdfEngine';
 
 interface PdfToolModalProps {
-  tool: PdfToolItem | null;
+  tool: PdfToolItem;
   onClose: () => void;
 }
 
 export const PdfToolModal: React.FC<PdfToolModalProps> = ({ tool, onClose }) => {
-  if (!tool) return null;
-
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +40,7 @@ export const PdfToolModal: React.FC<PdfToolModalProps> = ({ tool, onClose }) => 
   };
 
   const handleExecute = async () => {
+    if (!tool) return;
     if (files.length === 0 && tool.id !== 'html_to_pdf') {
       setError('Por favor, selecione pelo menos um arquivo.');
       return;

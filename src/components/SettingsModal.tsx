@@ -3,7 +3,7 @@ import { X, Sliders, Check } from 'lucide-react';
 import { FileItem, ConversionOptions } from '../types';
 
 interface SettingsModalProps {
-  item: FileItem | null;
+  item: FileItem;
   onClose: () => void;
   onSave: (id: string, newOptions: ConversionOptions) => void;
 }
@@ -13,8 +13,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   onSave
 }) => {
-  if (!item) return null;
-
   const [options, setOptions] = useState<ConversionOptions>({ ...item.options });
 
   const handleSave = () => {
