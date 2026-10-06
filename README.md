@@ -70,7 +70,7 @@ O **OmniConvert Studio** faz o processamento **diretamente na memória RAM do se
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/SEU_USUARIO/omniconvert.git
+git clone https://github.com/bragaty/omniconvert.git
 cd omniconvert
 ```
 
