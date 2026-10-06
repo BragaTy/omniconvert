@@ -34,15 +34,14 @@ O **OmniConvert Studio** faz o processamento **diretamente na memória RAM do se
 
 ---
 
-### 📑 2. Suite Completa de 32 Ferramentas PDF (Estilo iLovePDF)
+### 📑 2. Suite Completa de Ferramentas PDF (Estilo iLovePDF)
 
 | Categoria | Ferramentas Inclusas |
 | :--- | :--- |
-| **Organizar & Editar** | Juntar PDF, Dividir PDF, Organizar Páginas, Rodar PDF (90°/180°/270°), Recortar Margens, Editar PDF, Ocultar/Tarjar Informações Sensíveis, Adicionar Números de Página. |
-| **Converter de PDF** | PDF para Word (.docx), PDF para PowerPoint, PDF para Excel (.xlsx), PDF para JPG, PDF para Markdown (.md), PDF para PDF/A (ISO arquivístico). |
+| **Organizar & Editar** | Juntar PDF, Dividir PDF, Organizar Páginas, Rodar PDF (90°/180°/270°), Recortar Margens, Editar PDF, Ocultar/Tarjar Informações Sensíveis, Adicionar Números de Página, Criar Formulários Interativos. |
+| **Converter de PDF** | PDF para Word (.docx), PDF para PowerPoint, PDF para Excel (.xlsx), PDF para JPG, PDF para Markdown (.md), PDF para PDF/A (ISO arquivístico), Extrair Texto do PDF (TXT). |
 | **Converter para PDF** | Word para PDF, PowerPoint para PDF, Excel para PDF, JPG para PDF, HTML para PDF, Digitalizar Câmera para PDF. |
 | **Otimizar & Segurança** | Comprimir PDF, Proteger com Senha, Desbloquear PDF, Reparar Estrutura Corrompida (XREF), Assinar Documento Digitalmente, Comparar Diferenças entre 2 PDFs. |
-| **Inteligência & Formulários** | Criar Formulários Interativos, Resumo Inteligente com IA, Traduzir Conteúdo, OCR (Extração de texto pesquisável). |
 
 ---
 

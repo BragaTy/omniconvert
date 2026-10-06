@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onSelectView }) => 
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Suite PDF (32)</span>
+            <span>Suite PDF</span>
           </button>
 
           <button

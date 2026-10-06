@@ -201,20 +201,6 @@ export const PdfToolModal: React.FC<PdfToolModalProps> = ({ tool, onClose }) => 
           filename = `${files[0].name.replace(/\.pdf$/i, '')}_formulario.pdf`;
           break;
         }
-        case 'summarize': {
-          const summary = await pdfEngine.summarizePdf(files[0]);
-          setTextResult(summary);
-          outputBlob = new Blob([summary], { type: 'text/markdown;charset=utf-8' });
-          filename = `${files[0].name.replace(/\.pdf$/i, '')}_resumo.md`;
-          break;
-        }
-        case 'translate': {
-          const res = await pdfEngine.translatePdf(files[0], 'Inglês');
-          setTextResult(res.translatedText);
-          outputBlob = res.blob;
-          filename = `${files[0].name.replace(/\.pdf$/i, '')}_traduzido.txt`;
-          break;
-        }
         case 'pdf_to_markdown': {
           const res = await pdfEngine.pdfToMarkdown(files[0]);
           setTextResult(res.markdown);

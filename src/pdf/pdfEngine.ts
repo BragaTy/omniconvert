@@ -614,45 +614,7 @@ export async function formPdf(
   return toPdfBlob(bytes);
 }
 
-// 29. Resumir com IA (Smart Extractive Summary)
-export async function summarizePdf(file: File): Promise<string> {
-  const text = await extractTextFromPdf(file);
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-  
-  // Scoring sentences by frequency of keywords
-  const wordFreq: Record<string, number> = {};
-  const words = text.toLowerCase().match(/\b\w{4,}\b/g) || [];
-  words.forEach(w => { wordFreq[w] = (wordFreq[w] || 0) + 1; });
-
-  const ranked = sentences.map(s => {
-    let score = 0;
-    const sWords = s.toLowerCase().match(/\b\w{4,}\b/g) || [];
-    sWords.forEach(w => { score += wordFreq[w] || 0; });
-    return { sentence: s.trim(), score: score / (sWords.length || 1) };
-  }).sort((a, b) => b.score - a.score);
-
-  const topSentences = ranked.slice(0, 5).map(r => `• ${r.sentence}`);
-
-  return `### 📑 Resumo Inteligente do Documento: ${file.name}
-
-#### 💡 Pontos Principais & Conclusões:
-${topSentences.join('\n\n')}
-
----
-*Análise realizada localmente em memória via processamento de linguagem natural no navegador.*`;
-}
-
-// 30. Traduzir PDF (Simple instant translation mapping)
-export async function translatePdf(file: File, targetLang = 'en'): Promise<{ translatedText: string; blob: Blob }> {
-  const text = await extractTextFromPdf(file);
-  
-  // Clean translation dictionary or mock translator
-  const notice = `[Tradução para ${targetLang.toUpperCase()}]:\n\n` + text;
-  const blob = new Blob([notice], { type: 'text/plain;charset=utf-8' });
-  return { translatedText: notice, blob };
-}
-
-// 31. PDF para Markdown
+// 29. PDF para Markdown
 export async function pdfToMarkdown(file: File): Promise<{ markdown: string; blob: Blob }> {
   const text = await extractTextFromPdf(file);
   const lines = text.split('\n');

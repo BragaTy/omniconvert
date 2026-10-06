@@ -18,7 +18,7 @@ export const FeaturesBanner: React.FC = () => {
     {
       icon: <Cpu className="w-5 h-5 text-indigo-400" />,
       bg: 'bg-indigo-500/10 border-indigo-500/20',
-      title: 'Detecção Inteligente',
+      title: 'Detecção Automática',
       description: 'Identifica automaticamente a categoria do arquivo e sugere apenas os formatos de destino matematicamente e logicamente compatíveis.'
     },
     {

@@ -3,14 +3,14 @@ import {
   FileStack, Scissors, Minimize2, FileText, Presentation, Sheet, 
   FileCheck, Edit3, Image, FileSignature, Stamp, RotateCw, Globe, 
   Lock, Unlock, LayoutGrid, Award, Wrench, Hash, Camera, Search, 
-  GitCompare, EyeOff, Crop, CheckSquare, Sparkles, Languages, 
+  GitCompare, EyeOff, Crop, CheckSquare, 
   Code, ArrowRight, Star
 } from 'lucide-react';
 
 export interface PdfToolItem {
   id: string;
   name: string;
-  category: 'organizar' | 'converter_de' | 'converter_para' | 'seguranca' | 'ia';
+  category: 'organizar' | 'converter_de' | 'converter_para' | 'seguranca';
   description: string;
   icon: React.ReactNode;
   badge?: string;
@@ -207,9 +207,9 @@ export const PDF_TOOLS: PdfToolItem[] = [
   },
   {
     id: 'ocr',
-    name: 'OCR PDF',
-    category: 'ia',
-    description: 'Converta facilmente um PDF em texto selecionável, copiável e pesquisável.',
+    name: 'Extrair Texto do PDF',
+    category: 'converter_de',
+    description: 'Extraia todo o texto contido em um arquivo PDF para um documento TXT pesquisável.',
     icon: <Search className="w-6 h-6 text-cyan-400" />,
     accept: '.pdf'
   },
@@ -241,28 +241,10 @@ export const PDF_TOOLS: PdfToolItem[] = [
   {
     id: 'form',
     name: 'Formulários PDF',
-    category: 'ia',
+    category: 'organizar',
     badge: 'Novo!',
     description: 'Crie PDFs preenchíveis interativos ou adicione campos de texto editáveis.',
     icon: <CheckSquare className="w-6 h-6 text-emerald-400" />,
-    accept: '.pdf'
-  },
-  {
-    id: 'summarize',
-    name: 'Resumir com IA',
-    category: 'ia',
-    badge: 'Novo!',
-    description: 'Gere rapidamente resumos concisos e pontos-chave claros e precisos em segundos.',
-    icon: <Sparkles className="w-6 h-6 text-purple-400" />,
-    accept: '.pdf'
-  },
-  {
-    id: 'translate',
-    name: 'Traduzir PDF',
-    category: 'ia',
-    badge: 'Novo!',
-    description: 'Traduza o conteúdo de arquivos PDF mantendo o texto estruturado com IA.',
-    icon: <Languages className="w-6 h-6 text-sky-400" />,
     accept: '.pdf'
   },
   {
@@ -270,7 +252,7 @@ export const PDF_TOOLS: PdfToolItem[] = [
     name: 'PDF para Markdown',
     category: 'converter_de',
     badge: 'Novo!',
-    description: 'Converta PDFs em arquivos Markdown (.md) para notas, Obsidian e modelos LLM.',
+    description: 'Converta PDFs em arquivos Markdown (.md) estruturados para documentação e anotações.',
     icon: <Code className="w-6 h-6 text-indigo-400" />,
     accept: '.pdf'
   }
@@ -302,7 +284,6 @@ export const PdfToolsGrid: React.FC<PdfToolsGridProps> = ({ onSelectTool }) => {
             { id: 'converter_de', label: 'Converter de PDF' },
             { id: 'converter_para', label: 'Converter para PDF' },
             { id: 'seguranca', label: 'Otimizar & Segurança' },
-            { id: 'ia', label: 'IA & Formulários' },
           ].map(tab => (
             <button
               key={tab.id}
